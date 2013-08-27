@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+require 'gli'
+begin # XXX: Remove this begin/rescue before distributing your app
+require 'digitalocean_cli'
+rescue LoadError
+  STDERR.puts "In development, you need to use `bundle exec bin/digitalocean_cli` to run your app"
+  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
+  STDERR.puts "Feel free to remove this message from bin/digitalocean_cli now"
+  exit 64
+end
+
+include GLI::App
+
+program_desc 'DigitalOcean Command Line Interface'
+
+version DigitaloceanCli::VERSION
+
+config_file '.digitalocean.rc'
+
+# desc 'Describe some switch here'
+# switch [:s,:switch]
+
+# desc 'Describe some flag here'
+# default_value 'the default'
+# arg_name 'The name of the argument'
+# flag [:f,:flagname]
+
+desc 'Your DigitalOcean API Key'
+arg_name 'API_KEY'
+flag [:K,:apikey]
+
+desc 'Your DigitalOcean Client ID'
+arg_name 'CLIENT_ID'
+flag [:C,:clientid]
+
+command :droplets do |c| # <- c is an instance of GLI::Command
+  c.desc 'List Droplets'
+
+  c.action do |global,options,args|
+    @client.droplets()
+  end
+
+  c.command :tasks do |t| # <- t is an instance of GLI::Command
+    # this is a "subcommand" of list
+
+    t.action do |global,options,args|
+      # do whatever list tasks should do
+    end
+  end
+end
+
+pre do |global,command,options,args|
+  # Pre logic here
+  # Return true to proceed; false to abort and not call the
+  # chosen command
+  # Use skips_pre before a command to skip this block
+  # on that command only
+  if options[:apikey] == nil or options[:clientid] == null then
+    help_now!('id is required')
+    return false
+  end
+  @client = Colombo.new(
+    :api_key   => args[:api_key],
+    :client_id => args[:client_id]
+  )
+  true
+end
+
+post do |global,command,options,args|
+  # Post logic here
+  # Use skips_post before a command to skip this
+  # block on that command only
+end
+
+on_error do |exception|
+  # Error logic here
+  # return false to skip default error handling
+  true
+end
+
+exit run(ARGV)

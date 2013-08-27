@@ -1,0 +1,5 @@
+= digitalocean_cli
+
+Generate this with
+    digitalocean_cli rdoc
+After you have described your command line interface

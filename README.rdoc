@@ -1,0 +1,6 @@
+= digitalocean_cli
+
+Describe your project here
+
+:include:digitalocean_cli.rdoc
+
