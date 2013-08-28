@@ -25,4 +25,5 @@ lib/digitalocean_cli.rb
   s.add_development_dependency('aruba')
   s.add_runtime_dependency('gli','2.7.0')
   s.add_runtime_dependency('colombo', '0.0.5')
+  s.add_runtime_dependency('awesome_print')
 end

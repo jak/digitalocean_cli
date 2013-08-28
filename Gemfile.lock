@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     digitalocean_cli (0.0.1)
+      awesome_print
       colombo (= 0.0.5)
       gli (= 2.7.0)
 
@@ -12,6 +13,7 @@ GEM
       childprocess (>= 0.3.6)
       cucumber (>= 1.1.1)
       rspec-expectations (>= 2.7.0)
+    awesome_print (1.1.0)
     builder (3.2.2)
     childprocess (0.3.9)
       ffi (~> 1.0, >= 1.0.11)

@@ -2,6 +2,7 @@
 require 'gli'
 begin # XXX: Remove this begin/rescue before distributing your app
 require 'digitalocean_cli'
+require 'awesome_print'
 rescue LoadError
   STDERR.puts "In development, you need to use `bundle exec bin/digitalocean_cli` to run your app"
   STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
@@ -17,14 +18,6 @@ version DigitaloceanCli::VERSION
 
 config_file '.digitalocean.rc'
 
-# desc 'Describe some switch here'
-# switch [:s,:switch]
-
-# desc 'Describe some flag here'
-# default_value 'the default'
-# arg_name 'The name of the argument'
-# flag [:f,:flagname]
-
 desc 'Your DigitalOcean API Key'
 arg_name 'API_KEY'
 flag [:K,:apikey]
@@ -33,35 +26,75 @@ desc 'Your DigitalOcean Client ID'
 arg_name 'CLIENT_ID'
 flag [:C,:clientid]
 
+desc 'List Droplets'
+long_desc 'a longer desc'
 command :droplets do |c| # <- c is an instance of GLI::Command
-  c.desc 'List Droplets'
-
   c.action do |global,options,args|
-    @client.droplets()
+    @client.droplets().each do |droplet|
+      ap droplet
+    end
   end
 
-  c.command :tasks do |t| # <- t is an instance of GLI::Command
-    # this is a "subcommand" of list
-
-    t.action do |global,options,args|
-      # do whatever list tasks should do
+  c.command :destroy do |c|
+    c.arg_name 'Droplet ID'
+    c.action do |global,options,args|
+      help_now! "Missing droplet id" if args.length == 0
     end
   end
 end
 
+
+desc 'All Images'
+long_desc 'This method returns all the available images that can be accessed by your client ID. You will have access to all public images by default, and any snapshots or backups that you have created in your own account.'
+command :images do |c|
+  c.action do |global, options, args|
+    puts "%-10s %-50s %-10s" % ["Image ID", "Name", "Distro"]
+    @client.images.each  do |image|
+      puts "%-10s %-50s %-10s" % [image.id, image.name, image.distribution]
+    end
+  end
+
+  c.desc 'This method displays the attributes of an image.'
+  c.arg_name 'IMAGE_ID'
+  c.command :show do |show|
+    show.action do |global, options, args|
+      help_now!('No image ID specified') if args.empty?
+      ap @client.images.find(args.first.to_i)
+    end
+  end
+end
+
+desc 'SSH Keys'
+long_desc 'This method lists all the available public SSH keys in your account that can be added to a droplet.'
+command :sshkeys do |c|
+  c.action do |global, options, args|
+    puts "%-12s %-50s" % ["SSH Key ID", "Name"]
+    @client.ssh_keys.each do |ssh_key|
+      puts "%-12s %-50s" % [ssh_key.id, ssh_key.name]
+    end
+  end
+
+  c.desc 'Show SSH Key'
+  c.long_desc 'This method shows a specific public SSH key in your account that can be added to a droplet.'
+  c.arg_name 'SSH_KEY_ID'
+  c.command :show do |show|
+    show.action do |global, options, args|
+      help_now!('No SSH key ID specified') if args.empty?
+      ap @client.ssh_keys.find(args.first.to_i)
+    end
+  end
+end
+
+
+
 pre do |global,command,options,args|
-  # Pre logic here
-  # Return true to proceed; false to abort and not call the
-  # chosen command
-  # Use skips_pre before a command to skip this block
-  # on that command only
-  if options[:apikey] == nil or options[:clientid] == null then
-    help_now!('id is required')
+  if global[:apikey] == nil or global[:clientid] == nil then
+    help_now!('apikey and clientid is required')
     return false
   end
   @client = Colombo.new(
-    :api_key   => args[:api_key],
-    :client_id => args[:client_id]
+    :api_key   => global[:apikey],
+    :client_id => global[:clientid]
   )
   true
 end
