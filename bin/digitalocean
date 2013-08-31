@@ -1,15 +1,7 @@
 #!/usr/bin/env ruby
 require 'gli'
-begin # XXX: Remove this begin/rescue before distributing your app
 require 'digitalocean_cli'
 require 'awesome_print'
-rescue LoadError
-  STDERR.puts "In development, you need to use `bundle exec bin/digitalocean_cli` to run your app"
-  STDERR.puts "At install-time, RubyGems will make sure lib, etc. are in the load path"
-  STDERR.puts "Feel free to remove this message from bin/digitalocean_cli now"
-  exit 64
-end
-
 include GLI::App
 
 program_desc 'DigitalOcean Command Line Interface'
@@ -30,8 +22,15 @@ desc 'List Droplets'
 long_desc 'a longer desc'
 command :droplets do |c| # <- c is an instance of GLI::Command
   c.action do |global,options,args|
-    @client.droplets().each do |droplet|
-      ap droplet
+    droplets = @client.droplets
+    exit_now!("No droplets in account") if droplets.empty?
+
+    puts "%-10s %-20s %-15s %-10s %-8s %-8s" % 
+      ["ID", "Name", "IP", "Status", "Size", "Region"]
+    droplets.each do |droplet|
+      puts "%-10s %-20s %-15s %-10s %-8s %-8s" %
+        [droplet.id, droplet.name, droplet.ip_address, droplet.status, 
+          droplet.size_id, droplet.region_id]
     end
   end
 
