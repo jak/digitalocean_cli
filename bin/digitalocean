@@ -18,19 +18,73 @@ desc 'Your DigitalOcean Client ID'
 arg_name 'CLIENT_ID'
 flag [:C,:clientid]
 
-desc 'List Droplets'
-long_desc 'a longer desc'
+desc 'Commands for manipulating your droplets'
+long_desc 'Commands to list, create, reboot, power cycle, shutdown, power off, power on, reset password, resize, 
+snapshot, restore, rebuild, enable and disable backups, rename and destroy your droplets'
 command :droplets do |c| # <- c is an instance of GLI::Command
-  c.action do |global,options,args|
-    droplets = @client.droplets
-    exit_now!("No droplets in account") if droplets.empty?
+  c.desc 'List your droplets'
+  c.long_desc 'This method returns all active droplets that are currently running in your account'
+  c.command :list do |c|
+    c.action do |global,options,args|
+      droplets = @client.droplets
+      exit_now!("No droplets in account") if droplets.empty?
 
-    puts "%-10s %-20s %-15s %-10s %-8s %-8s" % 
-      ["ID", "Name", "IP", "Status", "Size", "Region"]
-    droplets.each do |droplet|
-      puts "%-10s %-20s %-15s %-10s %-8s %-8s" %
-        [droplet.id, droplet.name, droplet.ip_address, droplet.status, 
-          droplet.size_id, droplet.region_id]
+      puts "%-10s %-20s %-15s %-10s %-8s %-8s" % 
+        ["ID", "Name", "IP", "Status", "Size", "Region"]
+      droplets.each do |droplet|
+        puts "%-10s %-20s %-15s %-10s %-8s %-8s" %
+          [droplet.id, droplet.name, droplet.ip_address, droplet.status, 
+            droplet.size_id, droplet.region_id]
+      end
+    end
+  end
+
+  c.arg_name 'NAME'
+  c.desc 'Create a droplet'
+  c.long_desc 'Creates a droplet on your account'
+  c.command :create do |c|  
+    c.flag [:i,:image], :arg_name => 'IMAGE_ID', :desc => 'Image ID', :must_match => /\d+/
+    c.flag [:r,:region], :arg_name => 'REGION_ID', :desc => 'Region ID', :must_match => /\d+/
+    c.flag [:s,:size], :arg_name => 'SIZE_ID', :desc => 'Size ID', :must_match => /\d+/
+    c.flag [:k,:sshkey], :arg_name => 'SSH_KEY_ID', :desc => 'SSH Key ID', :must_match => /\d+(?:,\d+)*/
+    c.action do |global,options,args|
+      help_now! "Missing droplet name" if args.length == 0
+      [:size,:image,:region].each do |x|
+        help_now! "Option #{x} is missing" if options[x] == nil
+      end
+      begin 
+        ap @client.droplets.create(
+            :name => args.first,
+            :size_id => options[:size],
+            :image_id => options[:image],
+            :region_id => options[:region],
+            :ssh_key_ids => options[:sshkey]
+        )
+      rescue Exception => e
+        help_now!("Something went wrong: #{e.message}")
+      end
+    end
+  end
+  
+  c.arg_name 'DROPLET_ID'
+  c.command :destroy do |c|
+    c.action do |global,options,args|
+      help_now! "Missing droplet id" if args.length == 0
+      @client.droplets.find(args.first.to_i)
+    end
+  end  
+  c.command :destroy do |c|
+    c.arg_name 'Droplet ID'
+    c.action do |global,options,args|
+      help_now! "Missing droplet id" if args.length == 0
+      @client.droplets.find(args.first.to_i)
+    end
+  end
+  c.command :destroy do |c|
+    c.arg_name 'Droplet ID'
+    c.action do |global,options,args|
+      help_now! "Missing droplet id" if args.length == 0
+      @client.droplets.find(args.first.to_i)
     end
   end
 
@@ -38,13 +92,15 @@ command :droplets do |c| # <- c is an instance of GLI::Command
     c.arg_name 'Droplet ID'
     c.action do |global,options,args|
       help_now! "Missing droplet id" if args.length == 0
+      @client.droplets.find(args.first.to_i)
     end
   end
 end
 
 
 desc 'All Images'
-long_desc 'This method returns all the available images that can be accessed by your client ID. You will have access to all public images by default, and any snapshots or backups that you have created in your own account.'
+long_desc 'This method returns all the available images that can be accessed by your client ID. You will have access to 
+all public images by default, and any snapshots or backups that you have created in your own account.'
 command :images do |c|
   c.action do |global, options, args|
     puts "%-10s %-50s %-10s" % ["Image ID", "Name", "Distro"]
